@@ -1,236 +1,191 @@
+from IPython.display import HTML
+
+HTML('''
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jadwal Sekolah Pintar</title>
-    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIlByb2dyYW1KYWR3YWwiLAogICJzaG9ydF9uYW1lIjogIkphZHdhbCIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjZmZmZmZmIiwKICAidGhlbWVfY29sb3IiOiAiIzI1NjNlYiIKfQ==">
+    <title>Pengingat Jadwal Sekolah</title>
     <style>
-        :root { --p: #2563eb; --bg: #f1f5f9; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .container { background: white; padding: 2rem; border-radius: 1.5rem; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); max-width: 400px; width: 90%; text-align: center; border: 1px solid #e2e8f0; }
-        h2 { color: #1e293b; margin-top: 0; }
-        input[type="file"] { margin: 1.5rem 0; padding: 1rem; border: 2px dashed #cbd5e1; width: 100%; box-sizing: border-box; cursor: pointer; border-radius: 0.5rem; }
-        #status { font-size: 0.85rem; color: #64748b; margin-bottom: 1rem; font-weight: 500; }
-        .item { background: #eff6ff; padding: 12px; margin: 8px 0; border-radius: 8px; text-align: left; font-size: 0.9rem; border-left: 5px solid var(--p); color: #1e40af; animation: slideIn 0.3s ease; }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .day-group {
+            margin-bottom: 15px;
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+            color: #34495e;
+        }
+        textarea {
+            width: 100%;
+            height: 60px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            resize: vertical;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            width: 100%;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .btn-permission {
+            background-color: #e67e22;
+        }
+        .btn-permission:hover {
+            background-color: #d35400;
+        }
+        .info {
+            font-size: 0.9em;
+            color: #7f8c8d;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>📅 Jadwal Pintar</h2>
-    <p id="status">Unggah foto jadwalmu. Sistem akan mengingatkanmu pada malam hari (20:00 - 23:59) untuk persiapan besok.</p>
-    <input type="file" id="imageInput" accept="image/*">
-    <div id="output"></div>
-</div>
+    <h1>Pengingat Jadwal</h1>
 
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-<script>
-    const status = document.getElementById('status');
-    const output = document.getElementById('output');
+    <div class="card">
+        <p class="info">Notifikasi jadwal besok akan muncul otomatis hari ini antara jam 20:00 - 00:00.</p>
+        <button class="btn-permission" onclick="requestNotificationPermission()">Izinkan Notifikasi Perangkat</button>
+    </div>
 
-    // --- 1. OTOMATISASI SERVICE WORKER (Background Task) ---
-    const swCode = `
-        self.addEventListener('install', e => self.skipWaiting());
-        self.addEventListener('activate', e => e.waitUntil(clients.claim()));
-        self.addEventListener('message', e => {
-            if (e.data.type === 'NOTIF') {
-                self.registration.showNotification(e.data.title, {
-                    body: e.data.body,
-                    icon: 'https://cdn-icons-png.flaticon.com/512/2693/2693507.png',
-                    vibrate: [200, 100, 200]
-                });
-            }
-        });
-    `;
-    const blob = new Blob([swCode], { type: 'application/javascript' });
-    const swUrl = URL.createObjectURL(blob);
+    <div class="card" id="scheduleForm">
+        <div class="day-group"><label>Senin</label><textarea id="Senin" placeholder="Contoh: Matematika, Fisika, B. Inggris..."></textarea></div>
+        <div class="day-group"><label>Selasa</label><textarea id="Selasa"></textarea></div>
+        <div class="day-group"><label>Rabu</label><textarea id="Rabu"></textarea></div>
+        <div class="day-group"><label>Kamis</label><textarea id="Kamis"></textarea></div>
+        <div class="day-group"><label>Jumat</label><textarea id="Jumat"></textarea></div>
+        <div class="day-group"><label>Sabtu</label><textarea id="Sabtu"></textarea></div>
+        <div class="day-group"><label>Minggu</label><textarea id="Minggu"></textarea></div>
 
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register(swUrl).then(() => console.log("SW Ready"));
-    }
+        <button onclick="saveSchedule()">Simpan Jadwal</button>
+    </div>
 
-    // --- 2. LOGIKA OCR & MEMBACA FOTO ---
-    document.getElementById('imageInput').addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
+    <script>
+        // Array hari yang sinkron dengan method getDay() di JavaScript (0 = Minggu, 1 = Senin, dst)
+        const daysArray = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
 
-        status.innerText = "🌀 Membaca gambar... (Sabar ya)";
-        output.innerHTML = "";
-
-        try {
-            const result = await Tesseract.recognize(file, 'ind');
-            const lines = result.data.text.split('\n').filter(l => l.trim().length > 4);
-            
-            status.innerHTML = "✅ <b>Jadwal Tersimpan!</b><br>Notifikasi siap mengingatkanmu nanti malam.";
-            localStorage.setItem('jadwal_data', JSON.stringify(lines));
-            
-            lines.forEach(text => {
-                const div = document.createElement('div');
-                div.className = 'item';
-                div.innerText = text;
-                output.appendChild(div);
-            });
-
-            if (Notification.permission !== 'granted') await Notification.requestPermission();
-        } catch (err) {
-            status.innerText = "❌ Gagal membaca gambar. Coba foto lebih jelas.";
-        }
-    });
-
-    // Menampilkan kembali jadwal kalau website di-refresh
-    window.onload = () => {
-        const savedData = JSON.parse(localStorage.getItem('jadwal_data'));
-        if (savedData && savedData.length > 0) {
-            savedData.forEach(text => {
-                const div = document.createElement('div');
-                div.className = 'item';
-                div.innerText = text;
-                output.appendChild(div);
-            });
-            status.innerHTML = "✅ <b>Jadwal Aktif!</b><br>Sistem siap mengingatkanmu nanti malam.";
-        }
-    };
-
-   </script>
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jadwal Sekolah Pintar</title>
-    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIlByb2dyYW1KYWR3YWwiLAogICJzaG9ydF9uYW1lIjogIkphZHdhbCIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjZmZmZmZmIiwKICAidGhlbWVfY29sb3IiOiAiIzI1NjNlYiIKfQ==">
-    <style>
-        :root { --p: #2563eb; --bg: #f1f5f9; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .container { background: white; padding: 2rem; border-radius: 1.5rem; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); max-width: 400px; width: 90%; text-align: center; border: 1px solid #e2e8f0; }
-        h2 { color: #1e293b; margin-top: 0; }
-        input[type="file"] { margin: 1.5rem 0; padding: 1rem; border: 2px dashed #cbd5e1; width: 100%; box-sizing: border-box; cursor: pointer; border-radius: 0.5rem; }
-        #status { font-size: 0.85rem; color: #64748b; margin-bottom: 1rem; font-weight: 500; }
-        .item { background: #eff6ff; padding: 12px; margin: 8px 0; border-radius: 8px; text-align: left; font-size: 0.9rem; border-left: 5px solid var(--p); color: #1e40af; animation: slideIn 0.3s ease; }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <h2>📅 Jadwal Pintar</h2>
-    <p id="status">Unggah foto jadwalmu. Sistem akan mengingatkanmu pada malam hari (20:00 - 23:59) untuk persiapan besok.</p>
-    <input type="file" id="imageInput" accept="image/*">
-    <div id="output"></div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-<script>
-    const status = document.getElementById('status');
-    const output = document.getElementById('output');
-
-    // --- 1. OTOMATISASI SERVICE WORKER (Background Task) ---
-    const swCode = `
-        self.addEventListener('install', e => self.skipWaiting());
-        self.addEventListener('activate', e => e.waitUntil(clients.claim()));
-        self.addEventListener('message', e => {
-            if (e.data.type === 'NOTIF') {
-                self.registration.showNotification(e.data.title, {
-                    body: e.data.body,
-                    icon: 'https://cdn-icons-png.flaticon.com/512/2693/2693507.png',
-                    vibrate: [200, 100, 200]
-                });
-            }
-        });
-    `;
-    const blob = new Blob([swCode], { type: 'application/javascript' });
-    const swUrl = URL.createObjectURL(blob);
-
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register(swUrl).then(() => console.log("SW Ready"));
-    }
-
-    // --- 2. LOGIKA OCR & MEMBACA FOTO ---
-    document.getElementById('imageInput').addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        status.innerText = "🌀 Membaca gambar... (Sabar ya)";
-        output.innerHTML = "";
-
-        try {
-            const result = await Tesseract.recognize(file, 'ind');
-            const lines = result.data.text.split('\n').filter(l => l.trim().length > 4);
-            
-            status.innerHTML = "✅ <b>Jadwal Tersimpan!</b><br>Notifikasi siap mengingatkanmu nanti malam.";
-            localStorage.setItem('jadwal_data', JSON.stringify(lines));
-            
-            lines.forEach(text => {
-                const div = document.createElement('div');
-                div.className = 'item';
-                div.innerText = text;
-                output.appendChild(div);
-            });
-
-            if (Notification.permission !== 'granted') await Notification.requestPermission();
-        } catch (err) {
-            status.innerText = "❌ Gagal membaca gambar. Coba foto lebih jelas.";
-        }
-    });
-
-    // Menampilkan kembali jadwal kalau website di-refresh
-    window.onload = () => {
-        const savedData = JSON.parse(localStorage.getItem('jadwal_data'));
-        if (savedData && savedData.length > 0) {
-            savedData.forEach(text => {
-                const div = document.createElement('div');
-                div.className = 'item';
-                div.innerText = text;
-                output.appendChild(div);
-            });
-            status.innerHTML = "✅ <b>Jadwal Aktif!</b><br>Sistem siap mengingatkanmu nanti malam.";
-        }
-    };
-
-    / --- 3. CEK WAKTU SETIAP MENIT ---
-    setInterval(() => {
-        const skrg = new Date();
-        const jam = skrg.getHours();
-
-        // Cek apakah sekarang berada di rentang Jam 8 Malam (20:00) sampai 11:59 Malam (23:59)
-        if (jam >= 20 && jam <= 23) {
-            
-            // Mengambil tanggal hari ini untuk mencegah spam notifikasi
-            const tanggalHariIni = skrg.toLocaleDateString('id-ID'); 
-            const kapanTerakhirNotif = localStorage.getItem('tanggal_terakhir_notif');
-
-            // Jika hari ini belum pernah dikirim notif, maka kirim!
-            if (kapanTerakhirNotif !== tanggalHariIni) {
-                
-                // Daftar nama hari untuk mencari tahu besok hari apa
-                const namaHari = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
-                let indexBesok = skrg.getDay() + 1; // +1 untuk hari besok
-                if (indexBesok > 6) indexBesok = 0; // Jika sabtu (6)+1 = 7, balik ke minggu (0)
-                
-                const hariBesok = namaHari[indexBesok];
-
-                // Kirim notifikasi (Kecuali kalau besok hari Minggu alias libur)
-                if (hariBesok !== "Minggu") {
-                    if (navigator.serviceWorker.controller) {
-                        navigator.serviceWorker.controller.postMessage({
-                            type: 'NOTIF',
-                            title: 🎒 Persiapan Sekolah Hari ${hariBesok}!,
-                            body: Yuk cek aplikasi sekarang untuk melihat jadwal hari ${hariBesok} dan siapkan bukumu.
-                        });
-                        
-                        // Kunci agar tidak dikirim ulang di menit berikutnya pada hari yang sama
-                        localStorage.setItem('tanggal_terakhir_notif', tanggalHariIni);
+        // 1. Meminta izin untuk menampilkan notifikasi di browser/HP
+        function requestNotificationPermission() {
+            if (!("Notification" in window)) {
+                alert("Browser ini tidak mendukung notifikasi desktop.");
+            } else if (Notification.permission === "granted") {
+                alert("Izin notifikasi sudah diberikan sebelumnya.");
+            } else if (Notification.permission !== "denied") {
+                Notification.requestPermission().then(function (permission) {
+                    if (permission === "granted") {
+                        alert("Notifikasi berhasil diaktifkan!");
                     }
+                });
+            }
+        }
+
+        // 2. Menyimpan inputan jadwal ke penyimpanan lokal browser
+        function saveSchedule() {
+            const schedules = {};
+            daysArray.forEach(day => {
+                const element = document.getElementById(day);
+                if (element) {
+                    schedules[day] = element.value;
+                }
+            });
+            localStorage.setItem('schoolSchedules', JSON.stringify(schedules));
+            alert("Jadwal berhasil disimpan!");
+        }
+
+        // 3. Memuat jadwal yang sudah tersimpan saat web dibuka
+        function loadSchedule() {
+            const schedules = JSON.parse(localStorage.getItem('schoolSchedules')) || {};
+            daysArray.forEach(day => {
+                const element = document.getElementById(day);
+                if (element && schedules[day]) {
+                    element.value = schedules[day];
+                }
+            });
+        }
+
+        // 4. Logika utama pengecekan jam dan hari untuk trigger notifikasi
+        function checkAndShowNotification() {
+            const now = new Date();
+            const currentHour = now.getHours(); // Format 24 jam (0-23)
+            const currentDayIndex = now.getDay(); // 0 (Minggu) sampai 6 (Sabtu)
+
+            // Cek apakah waktu saat ini antara jam 20.00 malam dan sebelum 00.00 (jam 23:59)
+            if (currentHour >= 20 && currentHour <= 23) {
+
+                // Cari tahu besok hari apa
+                const tomorrowIndex = (currentDayIndex + 1) % 7;
+                const tomorrowName = daysArray[tomorrowIndex];
+
+                // Ambil data jadwal dari storage
+                const schedules = JSON.parse(localStorage.getItem('schoolSchedules')) || {};
+                const tomorrowSchedule = schedules[tomorrowName];
+
+                // Cek agar notifikasi hanya keluar 1 KALI dalam satu malam
+                const lastNotifiedDate = localStorage.getItem('lastNotifiedDate');
+                const todayString = now.toDateString(); // Contoh: "Sun Apr 26 2026"
+
+                // Jika besok ada jadwal yang sudah diisi, dan hari ini belum dikirim notif
+                if (tomorrowSchedule && tomorrowSchedule.trim() !== "" && lastNotifiedDate !== todayString) {
+
+                    const title = `Persiapkan untuk Besok (${tomorrowName})!`;
+                    const bodyText = `Jadwal kamu: \n${tomorrowSchedule}`;
+
+                    // Tampilkan notifikasi sistem
+                    if (Notification.permission === "granted") {
+                        new Notification(title, { body: bodyText });
+                    } else {
+                        // Fallback jika notifikasi sistem diblokir
+                        alert(`${title}\n\n${bodyText}`);
+                    }
+
+                    // Tandai bahwa hari ini sudah memunculkan notifikasi
+                    localStorage.setItem('lastNotifiedDate', todayString);
                 }
             }
         }
-    }, 60000); // Cek rutin setiap 60 detik (1 menit)
-</script>
 
+        // Jalankan load data pertama kali web dibuka
+        loadSchedule();
+
+        // Cek waktu dan jadwal setiap 1 menit (60000 milidetik)
+        setInterval(checkAndShowNotification, 60000);
+
+    </script>
 </body>
 </html>
-
-</body>
-</html>
+'''
+)
